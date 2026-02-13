@@ -1,0 +1,16 @@
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (si usas alguna herramienta)
+node_modules/
+package-lock.json
+
+# Vercel
+.vercel

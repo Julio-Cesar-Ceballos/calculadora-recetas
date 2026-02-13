@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Calculadora de rentabilidad para recetas y productos">
+    <meta name="theme-color" content="#6366f1">
+    <link rel="manifest" href="manifest.json">
+    <title>Calculadora de Rentabilidad - Recetas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 1rem;
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: var(--primary);
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .grid-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .grid-3 {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--text-light);
+            color: white;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .item-list {
+            margin-top: 1rem;
+        }
+
+        .item {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .item-details {
+            display: grid;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .summary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .summary-item {
+            background: rgba(255,255,255,0.15);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .summary-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .donation-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .donation-buttons {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .donation-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .donation-buttons {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .donation-btn {
+            background: white;
+            color: var(--text);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .donation-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .donation-icon {
+            font-size: 2rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--success);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            display: none;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .install-prompt {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .install-prompt.show {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="install-prompt" id="installPrompt">
+            <span>📱 ¡Instala esta app en tu dispositivo!</span>
+            <button class="btn btn-small" onclick="installApp()" style="background: white; color: var(--primary)">Instalar</button>
+        </div>
+
+        <div class="header">
+            <h1>🧁 Calculadora de Rentabilidad</h1>
+            <p>Calcula los costos y ganancias de tus recetas</p>
+        </div>
+
+        <!-- Información del Producto -->
+        <div class="card">
+            <div class="card-title">📝 Información del Producto</div>
+            <div class="grid grid-2">
+                <div class="input-group">
+                    <label for="productName">Nombre del producto</label>
+                    <input type="text" id="productName" placeholder="Ej: Buñuelos de queso">
+                </div>
+                <div class="input-group">
+                    <label for="unitsProduced">Unidades que salen</label>
+                    <input type="number" id="unitsProduced" placeholder="Ej: 50" min="1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Ingredientes -->
+        <div class="card">
+            <div class="card-title">🥘 Ingredientes</div>
+            <div class="grid grid-3">
+                <div class="input-group">
+                    <label for="ingredientName">Nombre</label>
+                    <input type="text" id="ingredientName" placeholder="Ej: Harina">
+                </div>
+                <div class="input-group">
+                    <label for="ingredientQty">Cantidad</label>
+                    <input type="text" id="ingredientQty" placeholder="Ej: 500g">
+                </div>
+                <div class="input-group">
+                    <label for="ingredientCost">Costo ($)</label>
+                    <input type="number" id="ingredientCost" placeholder="5000" step="0.01">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="addIngredient()">➕ Agregar Ingrediente</button>
+            
+            <div class="item-list" id="ingredientsList"></div>
+        </div>
+
+        <!-- Mano de Obra -->
+        <div class="card">
+            <div class="card-title">👨‍🍳 Mano de Obra</div>
+            <div class="grid grid-3">
+                <div class="input-group">
+                    <label for="laborDesc">Descripción</label>
+                    <input type="text" id="laborDesc" placeholder="Ej: Preparación">
+                </div>
+                <div class="input-group">
+                    <label for="laborTime">Tiempo (horas)</label>
+                    <input type="number" id="laborTime" placeholder="2" step="0.5">
+                </div>
+                <div class="input-group">
+                    <label for="laborRate">Tarifa por hora ($)</label>
+                    <input type="number" id="laborRate" placeholder="10000" step="0.01">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="addLabor()">➕ Agregar Mano de Obra</button>
+            
+            <div class="item-list" id="laborList"></div>
+        </div>
+
+        <!-- Materiales -->
+        <div class="card">
+            <div class="card-title">📦 Materiales y Otros Costos</div>
+            <div class="grid grid-3">
+                <div class="input-group">
+                    <label for="materialName">Descripción</label>
+                    <input type="text" id="materialName" placeholder="Ej: Empaque">
+                </div>
+                <div class="input-group">
+                    <label for="materialQty">Cantidad</label>
+                    <input type="text" id="materialQty" placeholder="50 unid">
+                </div>
+                <div class="input-group">
+                    <label for="materialCost">Costo ($)</label>
+                    <input type="number" id="materialCost" placeholder="3000" step="0.01">
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="addMaterial()">➕ Agregar Material</button>
+            
+            <div class="item-list" id="materialsList"></div>
+        </div>
+
+        <!-- Precio de Venta -->
+        <div class="card">
+            <div class="card-title">💰 Precio de Venta</div>
+            <div class="input-group">
+                <label for="salePrice">Precio por unidad ($)</label>
+                <input type="number" id="salePrice" placeholder="1500" step="0.01">
+            </div>
+        </div>
+
+        <!-- Resumen -->
+        <div class="card summary">
+            <h2 style="margin-bottom: 1rem;">📊 Resumen de Rentabilidad</h2>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-label">Costo Total</div>
+                    <div class="summary-value" id="totalCost">$0</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Costo por Unidad</div>
+                    <div class="summary-value" id="unitCost">$0</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Ingreso Total</div>
+                    <div class="summary-value" id="totalRevenue">$0</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Ganancia Total</div>
+                    <div class="summary-value" id="totalProfit">$0</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Ganancia por Unidad</div>
+                    <div class="summary-value" id="unitProfit">$0</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Margen de Ganancia</div>
+                    <div class="summary-value" id="profitMargin">0%</div>
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; display: grid; gap: 1rem;">
+                <button class="btn btn-success" onclick="saveRecipe()">💾 Guardar Receta</button>
+                <button class="btn btn-secondary" onclick="openRecipes()">📋 Ver Recetas Guardadas</button>
+                <button class="btn" style="background: rgba(255,255,255,0.2); color: white;" onclick="resetForm()">🔄 Nueva Receta</button>
+            </div>
+        </div>
+
+        <!-- Donaciones -->
+        <div class="card donation-section">
+            <h2 style="margin-bottom: 0.5rem;">☕ ¿Te fue útil?</h2>
+            <p style="opacity: 0.9; margin-bottom: 1rem;">¡Invítame un café para seguir mejorando la app!</p>
+            
+            <div class="donation-buttons">
+                <button class="donation-btn" onclick="openDaviplata()">
+                    <div class="donation-icon">📱</div>
+                    <div>DaviPlata</div>
+                </button>
+                <button class="donation-btn" onclick="openNequi()">
+                    <div class="donation-icon">💜</div>
+                    <div>Nequi</div>
+                </button>
+                <button class="donation-btn" onclick="openMercadoPago()">
+                    <div class="donation-icon">💳</div>
+                    <div>Mercado Pago</div>
+                </button>
+                <button class="donation-btn" onclick="openPayPal()">
+                    <div class="donation-icon">💙</div>
+                    <div>PayPal</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Recetas Guardadas -->
+    <div class="modal" id="recipesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Recetas Guardadas</h2>
+                <button class="modal-close" onclick="closeRecipes()">✕</button>
+            </div>
+            <div id="savedRecipesList"></div>
+        </div>
+    </div>
+
+    <!-- Toast de notificación -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Estado de la aplicación
+        let ingredients = [];
+        let labor = [];
+        let materials = [];
+        let deferredPrompt;
+
+        // PWA Install
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installPrompt').classList.add('show');
+        });
+
+        async function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                document.getElementById('installPrompt').classList.remove('show');
+            }
+        }
+
+        // Funciones para agregar items
+        function addIngredient() {
+            const name = document.getElementById('ingredientName').value;
+            const qty = document.getElementById('ingredientQty').value;
+            const cost = parseFloat(document.getElementById('ingredientCost').value) || 0;
+
+            if (!name || !qty || cost <= 0) {
+                showToast('Por favor completa todos los campos', 'error');
+                return;
+            }
+
+            ingredients.push({ name, qty, cost });
+            document.getElementById('ingredientName').value = '';
+            document.getElementById('ingredientQty').value = '';
+            document.getElementById('ingredientCost').value = '';
+            
+            renderIngredients();
+            calculate();
+        }
+
+        function addLabor() {
+            const desc = document.getElementById('laborDesc').value;
+            const time = parseFloat(document.getElementById('laborTime').value) || 0;
+            const rate = parseFloat(document.getElementById('laborRate').value) || 0;
+
+            if (!desc || time <= 0 || rate <= 0) {
+                showToast('Por favor completa todos los campos', 'error');
+                return;
+            }
+
+            const cost = time * rate;
+            labor.push({ desc, time, rate, cost });
+            document.getElementById('laborDesc').value = '';
+            document.getElementById('laborTime').value = '';
+            document.getElementById('laborRate').value = '';
+            
+            renderLabor();
+            calculate();
+        }
+
+        function addMaterial() {
+            const name = document.getElementById('materialName').value;
+            const qty = document.getElementById('materialQty').value;
+            const cost = parseFloat(document.getElementById('materialCost').value) || 0;
+
+            if (!name || !qty || cost <= 0) {
+                showToast('Por favor completa todos los campos', 'error');
+                return;
+            }
+
+            materials.push({ name, qty, cost });
+            document.getElementById('materialName').value = '';
+            document.getElementById('materialQty').value = '';
+            document.getElementById('materialCost').value = '';
+            
+            renderMaterials();
+            calculate();
+        }
+
+        // Renderizar listas
+        function renderIngredients() {
+            const list = document.getElementById('ingredientsList');
+            if (ingredients.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🥘</div><p>No hay ingredientes agregados</p></div>';
+                return;
+            }
+
+            list.innerHTML = ingredients.map((item, index) => `
+                <div class="item">
+                    <div class="item-header">
+                        <span>${item.name}</span>
+                        <button class="btn btn-danger btn-small" onclick="removeItem('ingredients', ${index})">🗑️</button>
+                    </div>
+                    <div class="item-details">
+                        <div>Cantidad: ${item.qty}</div>
+                        <div>Costo: ${formatCurrency(item.cost)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderLabor() {
+            const list = document.getElementById('laborList');
+            if (labor.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👨‍🍳</div><p>No hay mano de obra agregada</p></div>';
+                return;
+            }
+
+            list.innerHTML = labor.map((item, index) => `
+                <div class="item">
+                    <div class="item-header">
+                        <span>${item.desc}</span>
+                        <button class="btn btn-danger btn-small" onclick="removeItem('labor', ${index})">🗑️</button>
+                    </div>
+                    <div class="item-details">
+                        <div>${item.time} horas × ${formatCurrency(item.rate)}/hora</div>
+                        <div>Costo: ${formatCurrency(item.cost)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderMaterials() {
+            const list = document.getElementById('materialsList');
+            if (materials.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>No hay materiales agregados</p></div>';
+                return;
+            }
+
+            list.innerHTML = materials.map((item, index) => `
+                <div class="item">
+                    <div class="item-header">
+                        <span>${item.name}</span>
+                        <button class="btn btn-danger btn-small" onclick="removeItem('materials', ${index})">🗑️</button>
+                    </div>
+                    <div class="item-details">
+                        <div>Cantidad: ${item.qty}</div>
+                        <div>Costo: ${formatCurrency(item.cost)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function removeItem(type, index) {
+            if (type === 'ingredients') ingredients.splice(index, 1);
+            if (type === 'labor') labor.splice(index, 1);
+            if (type === 'materials') materials.splice(index, 1);
+            
+            renderIngredients();
+            renderLabor();
+            renderMaterials();
+            calculate();
+        }
+
+        // Cálculos
+        function calculate() {
+            const units = parseFloat(document.getElementById('unitsProduced').value) || 1;
+            const salePrice = parseFloat(document.getElementById('salePrice').value) || 0;
+
+            const ingredientsCost = ingredients.reduce((sum, item) => sum + item.cost, 0);
+            const laborCost = labor.reduce((sum, item) => sum + item.cost, 0);
+            const materialsCost = materials.reduce((sum, item) => sum + item.cost, 0);
+
+            const totalCost = ingredientsCost + laborCost + materialsCost;
+            const unitCost = totalCost / units;
+            const totalRevenue = salePrice * units;
+            const totalProfit = totalRevenue - totalCost;
+            const unitProfit = salePrice - unitCost;
+            const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue * 100) : 0;
+
+            document.getElementById('totalCost').textContent = formatCurrency(totalCost);
+            document.getElementById('unitCost').textContent = formatCurrency(unitCost);
+            document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
+            document.getElementById('totalProfit').textContent = formatCurrency(totalProfit);
+            document.getElementById('unitProfit').textContent = formatCurrency(unitProfit);
+            document.getElementById('profitMargin').textContent = profitMargin.toFixed(1) + '%';
+        }
+
+        // Guardar y cargar recetas
+        function saveRecipe() {
+            const name = document.getElementById('productName').value;
+            const units = document.getElementById('unitsProduced').value;
+            const salePrice = document.getElementById('salePrice').value;
+
+            if (!name) {
+                showToast('Por favor ingresa el nombre del producto', 'error');
+                return;
+            }
+
+            const recipe = {
+                id: Date.now(),
+                name,
+                units,
+                salePrice,
+                ingredients: [...ingredients],
+                labor: [...labor],
+                materials: [...materials],
+                date: new Date().toLocaleString('es-CO')
+            };
+
+            const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+            recipes.push(recipe);
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+
+            showToast('✅ Receta guardada exitosamente');
+        }
+
+        function openRecipes() {
+            const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+            const list = document.getElementById('savedRecipesList');
+
+            if (recipes.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>No tienes recetas guardadas</p></div>';
+            } else {
+                list.innerHTML = recipes.map(recipe => `
+                    <div class="item" style="margin-bottom: 1rem;">
+                        <div class="item-header">
+                            <span><strong>${recipe.name}</strong></span>
+                            <button class="btn btn-danger btn-small" onclick="deleteRecipe(${recipe.id})">🗑️</button>
+                        </div>
+                        <div class="item-details">
+                            <div>📅 ${recipe.date}</div>
+                            <div>📦 ${recipe.units} unidades</div>
+                            <div>💰 ${formatCurrency(recipe.salePrice)} c/u</div>
+                        </div>
+                        <button class="btn btn-primary btn-small" style="margin-top: 0.5rem; width: 100%;" onclick="loadRecipe(${recipe.id})">Cargar Receta</button>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('recipesModal').classList.add('active');
+        }
+
+        function closeRecipes() {
+            document.getElementById('recipesModal').classList.remove('active');
+        }
+
+        function loadRecipe(id) {
+            const recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+            const recipe = recipes.find(r => r.id === id);
+
+            if (recipe) {
+                document.getElementById('productName').value = recipe.name;
+                document.getElementById('unitsProduced').value = recipe.units;
+                document.getElementById('salePrice').value = recipe.salePrice;
+
+                ingredients = [...recipe.ingredients];
+                labor = [...recipe.labor];
+                materials = [...recipe.materials];
+
+                renderIngredients();
+                renderLabor();
+                renderMaterials();
+                calculate();
+
+                closeRecipes();
+                showToast('✅ Receta cargada');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function deleteRecipe(id) {
+            if (confirm('¿Estás seguro de eliminar esta receta?')) {
+                let recipes = JSON.parse(localStorage.getItem('recipes') || '[]');
+                recipes = recipes.filter(r => r.id !== id);
+                localStorage.setItem('recipes', JSON.stringify(recipes));
+                openRecipes();
+                showToast('🗑️ Receta eliminada');
+            }
+        }
+
+        function resetForm() {
+            if (confirm('¿Estás seguro de limpiar todos los datos?')) {
+                document.getElementById('productName').value = '';
+                document.getElementById('unitsProduced').value = '';
+                document.getElementById('salePrice').value = '';
+                ingredients = [];
+                labor = [];
+                materials = [];
+                renderIngredients();
+                renderLabor();
+                renderMaterials();
+                calculate();
+                showToast('🔄 Formulario limpiado');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Donaciones
+        function openDaviplata() {
+            // PERSONALIZA AQUÍ: Reemplaza con tu llave DaviPlata
+            const llaveDaviplata = '1039447149';
+            
+            const mensaje = `💚 Transferir por DaviPlata\n\nLlave: ${llaveDaviplata}\n\n¡Copia la llave y realiza tu donación desde la app DaviPlata!`;
+            
+            // Intentar copiar al portapapeles
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(llaveDaviplata).then(() => {
+                    alert(mensaje + '\n\n✅ Llave copiada al portapapeles');
+                    showToast('✅ Llave DaviPlata copiada');
+                }).catch(() => {
+                    alert(mensaje);
+                    showToast('¡Gracias por tu apoyo! 💚');
+                });
+            } else {
+                alert(mensaje);
+                showToast('¡Gracias por tu apoyo! 💚');
+            }
+        }
+
+        function openNequi() {
+            // PERSONALIZA AQUÍ: Reemplaza con tu llave Nequi
+            const llaveNequi = 'juliocesarceballos2016@gmail.com';
+            
+            const mensaje = `💜 Transferir por Nequi\n\nLlave: ${llaveNequi}\n\n¡Copia la llave y realiza tu donación desde la app Nequi!`;
+            
+            // Intentar copiar al portapapeles
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(llaveNequi).then(() => {
+                    alert(mensaje + '\n\n✅ Llave copiada al portapapeles');
+                    showToast('✅ Llave Nequi copiada');
+                }).catch(() => {
+                    alert(mensaje);
+                    showToast('¡Gracias por tu apoyo! 💜');
+                });
+            } else {
+                alert(mensaje);
+                showToast('¡Gracias por tu apoyo! 💜');
+            }
+        }
+
+        function openMercadoPago() {
+            // Aquí deberías poner tu link de Mercado Pago
+            const link = 'https://link.mercadopago.com.co/appsdejulio';
+            window.open(link, '_blank');
+            showToast('¡Gracias por tu apoyo! 💙');
+        }
+
+        function openPayPal() {
+            // Aquí deberías poner tu link de PayPal
+            const link = 'https://www.paypal.com/paypalme/JulioCesarCeballosC';
+            window.open(link, '_blank');
+            showToast('¡Gracias por tu apoyo! 💛');
+        }
+
+        // Utilidades
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = type === 'error' ? 'var(--danger)' : 'var(--success)';
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Event listeners
+        document.getElementById('unitsProduced').addEventListener('input', calculate);
+        document.getElementById('salePrice').addEventListener('input', calculate);
+
+        // Permitir Enter para agregar items
+        document.getElementById('ingredientCost').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addIngredient();
+        });
+        document.getElementById('laborRate').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addLabor();
+        });
+        document.getElementById('materialCost').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addMaterial();
+        });
+
+        // Inicialización
+        renderIngredients();
+        renderLabor();
+        renderMaterials();
+        calculate();
+
+        // Registrar Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker registrado'))
+                .catch(err => console.log('Error al registrar SW:', err));
+        }
+    </script>
+</body>
+</html>
