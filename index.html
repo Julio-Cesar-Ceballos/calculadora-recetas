@@ -250,13 +250,7 @@
 
         @media (min-width: 768px) {
             .donation-buttons {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .donation-buttons {
-                grid-template-columns: repeat(4, 1fr);
+                grid-template-columns: repeat(3, 1fr);
             }
         }
 
@@ -397,10 +391,52 @@
         .install-prompt.show {
             display: flex;
         }
+
+        .inapp-browser-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: none;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .inapp-browser-warning.show {
+            display: flex;
+        }
+
+        .inapp-browser-warning strong {
+            font-size: 1.1rem;
+        }
+
+        .open-external-btn {
+            background: white;
+            color: #ef4444;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="inapp-browser-warning" id="inappWarning">
+            <strong>⚠️ Para instalar la app, ábrela en tu navegador</strong>
+            <p style="margin: 0; font-size: 0.9rem;">Estás usando el navegador de Facebook/Instagram. Para instalar la app, abre este link en Chrome, Safari o tu navegador predeterminado.</p>
+            <button class="open-external-btn" onclick="copyLinkAndShowInstructions()">
+                📋 Copiar link e instrucciones
+            </button>
+        </div>
+
         <div class="install-prompt" id="installPrompt">
             <span>📱 ¡Instala esta app en tu dispositivo!</span>
             <button class="btn btn-small" onclick="installApp()" style="background: white; color: var(--primary)">Instalar</button>
@@ -446,6 +482,10 @@
             <button class="btn btn-primary" onclick="addIngredient()">➕ Agregar Ingrediente</button>
             
             <div class="item-list" id="ingredientsList"></div>
+            
+            <div id="ingredientsTotal" style="display: none; margin-top: 1rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem; border-left: 4px solid var(--primary);">
+                <strong style="color: var(--primary);">Total Ingredientes: <span id="ingredientsTotalValue">$0</span></strong>
+            </div>
         </div>
 
         <!-- Mano de Obra -->
@@ -458,16 +498,24 @@
                 </div>
                 <div class="input-group">
                     <label for="laborTime">Tiempo (horas)</label>
-                    <input type="number" id="laborTime" placeholder="2" step="0.5">
+                    <input type="number" id="laborTime" placeholder="2" step="0.5" oninput="updateLaborCost()">
                 </div>
                 <div class="input-group">
                     <label for="laborRate">Tarifa por hora ($)</label>
-                    <input type="number" id="laborRate" placeholder="10000" step="0.01">
+                    <input type="number" id="laborRate" placeholder="10000" step="0.01" oninput="updateLaborCost()">
                 </div>
+            </div>
+            <div class="input-group" style="margin-top: 1rem;">
+                <label for="laborCostPreview">Costo total de mano de obra</label>
+                <input type="text" id="laborCostPreview" readonly style="background: #f1f5f9; font-weight: 600; color: var(--primary);" value="$0">
             </div>
             <button class="btn btn-primary" onclick="addLabor()">➕ Agregar Mano de Obra</button>
             
             <div class="item-list" id="laborList"></div>
+            
+            <div id="laborTotal" style="display: none; margin-top: 1rem; padding: 1rem; background: #fef3c7; border-radius: 0.5rem; border-left: 4px solid var(--warning);">
+                <strong style="color: #b45309;">Total Mano de Obra: <span id="laborTotalValue">$0</span></strong>
+            </div>
         </div>
 
         <!-- Materiales -->
@@ -490,6 +538,10 @@
             <button class="btn btn-primary" onclick="addMaterial()">➕ Agregar Material</button>
             
             <div class="item-list" id="materialsList"></div>
+            
+            <div id="materialsTotal" style="display: none; margin-top: 1rem; padding: 1rem; background: #f0fdf4; border-radius: 0.5rem; border-left: 4px solid var(--success);">
+                <strong style="color: #065f46;">Total Materiales: <span id="materialsTotalValue">$0</span></strong>
+            </div>
         </div>
 
         <!-- Precio de Venta -->
@@ -555,11 +607,11 @@
                     <div class="donation-icon">💳</div>
                     <div>Mercado Pago</div>
                 </button>
-                <button class="donation-btn" onclick="openPayPal()">
-                    <div class="donation-icon">💙</div>
-                    <div>PayPal</div>
+                <button class="donation-btn" onclick="openKofi()">
+                    <div class="donation-icon">☕</div>
+                    <div>Ko-fi</div>
                 </button>
-            </div>
+            </div>       
         </div>
     </div>
 
@@ -584,6 +636,86 @@
         let materials = [];
         let deferredPrompt;
 
+        // Detectar navegador in-app (Facebook, Instagram, TikTok, etc.)
+        function detectInAppBrowser() {
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            
+            // Detectar navegadores in-app comunes
+            const isFacebook = (ua.indexOf('FBAN') > -1) || (ua.indexOf('FBAV') > -1) || (ua.indexOf('FB_IAB') > -1);
+            const isInstagram = ua.indexOf('Instagram') > -1;
+            const isTwitter = ua.indexOf('Twitter') > -1;
+            const isLinkedIn = ua.indexOf('LinkedInApp') > -1;
+            const isTikTok = ua.indexOf('TikTok') > -1 || ua.indexOf('musical_ly') > -1;
+            const isWhatsApp = ua.indexOf('WhatsApp') > -1;
+            
+            return isFacebook || isInstagram || isTwitter || isLinkedIn || isTikTok || isWhatsApp;
+        }
+
+        // Mostrar advertencia si está en navegador in-app
+        if (detectInAppBrowser()) {
+            document.getElementById('inappWarning').classList.add('show');
+        }
+
+        // Copiar link y mostrar instrucciones
+        function copyLinkAndShowInstructions() {
+            const currentUrl = window.location.href;
+            
+            // Intentar copiar al portapapeles
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(currentUrl).then(() => {
+                    showInstructions(true);
+                }).catch(() => {
+                    showInstructions(false);
+                });
+            } else {
+                // Fallback para navegadores que no soportan clipboard API
+                const tempInput = document.createElement('input');
+                tempInput.value = currentUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                try {
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    showInstructions(true);
+                } catch (err) {
+                    document.body.removeChild(tempInput);
+                    showInstructions(false);
+                }
+            }
+        }
+
+        function showInstructions(linkCopied) {
+            const instructions = linkCopied 
+                ? `✅ ¡Link copiado!
+
+📱 INSTRUCCIONES PARA INSTALAR:
+
+1️⃣ Toca los 3 puntos (⋮) arriba a la derecha
+2️⃣ Selecciona "Abrir en navegador" o "Abrir en Chrome/Safari"
+3️⃣ Una vez abierto en tu navegador, verás el botón "Instalar"
+4️⃣ ¡Listo! La app se instalará en tu celular
+
+💡 También puedes:
+• Pegar el link en Chrome o Safari
+• Compartir el link y abrirlo desde Mensajes
+
+El link ya está copiado en tu portapapeles.`
+                : `📱 INSTRUCCIONES PARA INSTALAR:
+
+1️⃣ Toca los 3 puntos (⋮) arriba a la derecha
+2️⃣ Selecciona "Abrir en navegador" o "Abrir en Chrome/Safari"
+3️⃣ Una vez abierto en tu navegador, verás el botón "Instalar"
+4️⃣ ¡Listo! La app se instalará en tu celular
+
+📋 Link de la app:
+${window.location.href}
+
+💡 Copia el link y ábrelo en Chrome o Safari`;
+
+            alert(instructions);
+            showToast(linkCopied ? '✅ Link copiado' : '📱 Sigue las instrucciones');
+        }
+
         // PWA Install
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -601,6 +733,13 @@
         }
 
         // Funciones para agregar items
+        function updateLaborCost() {
+            const time = parseFloat(document.getElementById('laborTime').value) || 0;
+            const rate = parseFloat(document.getElementById('laborRate').value) || 0;
+            const cost = time * rate;
+            document.getElementById('laborCostPreview').value = formatCurrency(cost);
+        }
+
         function addIngredient() {
             const name = document.getElementById('ingredientName').value;
             const qty = document.getElementById('ingredientQty').value;
@@ -662,8 +801,12 @@
         // Renderizar listas
         function renderIngredients() {
             const list = document.getElementById('ingredientsList');
+            const totalDiv = document.getElementById('ingredientsTotal');
+            const totalValue = document.getElementById('ingredientsTotalValue');
+            
             if (ingredients.length === 0) {
                 list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🥘</div><p>No hay ingredientes agregados</p></div>';
+                totalDiv.style.display = 'none';
                 return;
             }
 
@@ -679,12 +822,20 @@
                     </div>
                 </div>
             `).join('');
+            
+            const total = ingredients.reduce((sum, item) => sum + item.cost, 0);
+            totalValue.textContent = formatCurrency(total);
+            totalDiv.style.display = 'block';
         }
 
         function renderLabor() {
             const list = document.getElementById('laborList');
+            const totalDiv = document.getElementById('laborTotal');
+            const totalValue = document.getElementById('laborTotalValue');
+            
             if (labor.length === 0) {
                 list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👨‍🍳</div><p>No hay mano de obra agregada</p></div>';
+                totalDiv.style.display = 'none';
                 return;
             }
 
@@ -700,12 +851,20 @@
                     </div>
                 </div>
             `).join('');
+            
+            const total = labor.reduce((sum, item) => sum + item.cost, 0);
+            totalValue.textContent = formatCurrency(total);
+            totalDiv.style.display = 'block';
         }
 
         function renderMaterials() {
             const list = document.getElementById('materialsList');
+            const totalDiv = document.getElementById('materialsTotal');
+            const totalValue = document.getElementById('materialsTotalValue');
+            
             if (materials.length === 0) {
                 list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📦</div><p>No hay materiales agregados</p></div>';
+                totalDiv.style.display = 'none';
                 return;
             }
 
@@ -721,6 +880,10 @@
                     </div>
                 </div>
             `).join('');
+            
+            const total = materials.reduce((sum, item) => sum + item.cost, 0);
+            totalValue.textContent = formatCurrency(total);
+            totalDiv.style.display = 'block';
         }
 
         function removeItem(type, index) {
@@ -755,7 +918,21 @@
             document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
             document.getElementById('totalProfit').textContent = formatCurrency(totalProfit);
             document.getElementById('unitProfit').textContent = formatCurrency(unitProfit);
-            document.getElementById('profitMargin').textContent = profitMargin.toFixed(1) + '%';
+            
+            const marginElement = document.getElementById('profitMargin');
+            marginElement.textContent = profitMargin.toFixed(1) + '%';
+            
+            // Agregar indicador visual de rentabilidad
+            const summaryDiv = document.querySelector('.summary');
+            if (totalProfit > 0 && profitMargin >= 30) {
+                summaryDiv.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            } else if (totalProfit > 0 && profitMargin >= 15) {
+                summaryDiv.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            } else if (totalProfit > 0) {
+                summaryDiv.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            } else {
+                summaryDiv.style.background = 'linear-gradient(135deg, #991b1b, #7f1d1d)';
+            }
         }
 
         // Guardar y cargar recetas
@@ -869,7 +1046,7 @@
         }
 
         // Donaciones
-        function openDaviplata() {
+                function openDaviplata() {
             // PERSONALIZA AQUÍ: Reemplaza con tu llave DaviPlata
             const llaveDaviplata = '1039447149';
             
@@ -918,11 +1095,11 @@
             showToast('¡Gracias por tu apoyo! 💙');
         }
 
-        function openPayPal() {
-            // Aquí deberías poner tu link de PayPal
-            const link = 'https://www.paypal.com/paypalme/JulioCesarCeballosC';
+        function openKofi() {
+            // Link de Ko-fi personalizado
+            const link = 'https://ko-fi.com/julioceballos';
             window.open(link, '_blank');
-            showToast('¡Gracias por tu apoyo! 💛');
+            showToast('¡Gracias por tu apoyo! ☕');
         }
 
         // Utilidades
